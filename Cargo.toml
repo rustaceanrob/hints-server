@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.7"
+tokio = { version = "1.44", features = ["rt-multi-thread", "fs", "macros"] }
+tokio-util = { version = "0.7.17", features = ["io"] }
 
 [profile.release]
 opt-level = 3
