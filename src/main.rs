@@ -15,8 +15,9 @@ use tokio::fs::File;
 use tokio_util::io::ReaderStream;
 
 const IP_BIND_LOCAL: IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
-const PORT_BIND_LOCAL: u16 = 3000;
+const PORT_BIND_LOCAL: u16 = 8080;
 const LOCAL_HOST: SocketAddr = SocketAddr::new(IP_BIND_LOCAL, PORT_BIND_LOCAL);
+const HINTS_DIR: &str = "/root/hints/";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Chain {
@@ -43,8 +44,7 @@ async fn handle_signet_hints() -> impl IntoResponse {
 }
 
 async fn stream_hints_file(chain: Chain) -> impl IntoResponse {
-    let bitcoin_dir = std::env::var("HINTS_DIR").unwrap();
-    let bitcoin_dir_path = PathBuf::from_str(&bitcoin_dir).unwrap();
+    let bitcoin_dir_path = PathBuf::from_str(&HINTS_DIR).unwrap();
     let hintsfile_path = match chain {
         Chain::Signet => bitcoin_dir_path.join("signet.hints"),
         Chain::Bitcoin => bitcoin_dir_path.join("bitcoin.hints"),
