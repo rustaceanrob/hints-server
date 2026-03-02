@@ -8,7 +8,7 @@ use axum::{
     Router,
     body::Body,
     http::{StatusCode, header},
-    response::{AppendHeaders, IntoResponse},
+    response::{AppendHeaders, IntoResponse, Html},
     routing::get,
 };
 use tokio::fs::File;
@@ -28,11 +28,32 @@ enum Chain {
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(async || "SwiftSync hints assistant."))
+        .route("/", get(index))
         .route("/hints/bitcoin", get(handle_bitcoin_hints))
         .route("/hints/signet", get(handle_signet_hints));
     let listener = tokio::net::TcpListener::bind(&LOCAL_HOST).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn index() -> Html<&'static str> {
+    Html(
+        r#"
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <title>SwiftSync Hints</title>
+            </head>
+            <body>
+                <h1>SwiftSync Hints</h1>
+                <ul>
+                    <li><a href="/hints/bitcoin">Bitcoin hints</a></li>
+                    <li><a href="/hints/signet">Signet hints</a></li>
+                </ul>
+            </body>
+        </html>
+        "#,
+    )
 }
 
 async fn handle_bitcoin_hints() -> impl IntoResponse {
