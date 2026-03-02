@@ -66,9 +66,15 @@ async fn handle_signet_hints() -> impl IntoResponse {
 
 async fn stream_hints_file(chain: Chain) -> impl IntoResponse {
     let bitcoin_dir_path = PathBuf::from_str(&HINTS_DIR).unwrap();
-    let hintsfile_path = match chain {
-        Chain::Signet => bitcoin_dir_path.join("signet.hints"),
-        Chain::Bitcoin => bitcoin_dir_path.join("bitcoin.hints"),
+    let (hintsfile_path, hintsfile_disposition) = match chain {
+        Chain::Signet => (
+            bitcoin_dir_path.join("signet.hints"),
+            "attachment; filename=\"signet.hints\"",
+        ),
+        Chain::Bitcoin => (
+            bitcoin_dir_path.join("bitcoin.hints"),
+            "attachment; filename=\"bitcoin.hints\"",
+        ),
     };
     let file = match File::open(hintsfile_path).await {
         Ok(file) => file,
@@ -77,8 +83,8 @@ async fn stream_hints_file(chain: Chain) -> impl IntoResponse {
     let byte_stream = ReaderStream::new(file);
     let body = Body::from_stream(byte_stream);
     let headers = AppendHeaders([
-        (header::CONTENT_TYPE, "binary/hints"),
-        (header::CONTENT_DISPOSITION, "file"),
+        (header::CONTENT_TYPE, "application/octet-stream"),
+        (header::CONTENT_DISPOSITION, hintsfile_disposition),
     ]);
     Ok((headers, body))
 }
