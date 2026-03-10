@@ -8,7 +8,7 @@ use axum::{
     Router,
     body::Body,
     http::{StatusCode, header},
-    response::{AppendHeaders, IntoResponse},
+    response::{AppendHeaders, IntoResponse, Html},
     routing::get,
 };
 use tokio::fs::File;
@@ -28,11 +28,32 @@ enum Chain {
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(async || "SwiftSync hints assistant."))
+        .route("/", get(index))
         .route("/hints/bitcoin", get(handle_bitcoin_hints))
         .route("/hints/signet", get(handle_signet_hints));
     let listener = tokio::net::TcpListener::bind(&LOCAL_HOST).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn index() -> Html<&'static str> {
+    Html(
+        r#"
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <title>SwiftSync Hints</title>
+            </head>
+            <body>
+                <h1>SwiftSync Hints</h1>
+                <ul>
+                    <li><a href="/hints/bitcoin">Bitcoin hints</a></li>
+                    <li><a href="/hints/signet">Signet hints</a></li>
+                </ul>
+            </body>
+        </html>
+        "#,
+    )
 }
 
 async fn handle_bitcoin_hints() -> impl IntoResponse {
@@ -45,9 +66,15 @@ async fn handle_signet_hints() -> impl IntoResponse {
 
 async fn stream_hints_file(chain: Chain) -> impl IntoResponse {
     let bitcoin_dir_path = PathBuf::from_str(&HINTS_DIR).unwrap();
-    let hintsfile_path = match chain {
-        Chain::Signet => bitcoin_dir_path.join("signet.hints"),
-        Chain::Bitcoin => bitcoin_dir_path.join("bitcoin.hints"),
+    let (hintsfile_path, hintsfile_disposition) = match chain {
+        Chain::Signet => (
+            bitcoin_dir_path.join("signet.hints"),
+            "attachment; filename=\"signet.hints\"",
+        ),
+        Chain::Bitcoin => (
+            bitcoin_dir_path.join("bitcoin.hints"),
+            "attachment; filename=\"bitcoin.hints\"",
+        ),
     };
     let file = match File::open(hintsfile_path).await {
         Ok(file) => file,
@@ -56,8 +83,8 @@ async fn stream_hints_file(chain: Chain) -> impl IntoResponse {
     let byte_stream = ReaderStream::new(file);
     let body = Body::from_stream(byte_stream);
     let headers = AppendHeaders([
-        (header::CONTENT_TYPE, "binary/hints"),
-        (header::CONTENT_DISPOSITION, "file"),
+        (header::CONTENT_TYPE, "application/octet-stream"),
+        (header::CONTENT_DISPOSITION, hintsfile_disposition),
     ]);
     Ok((headers, body))
 }
