@@ -8,7 +8,7 @@ use axum::{
     Router,
     body::Body,
     http::{StatusCode, header},
-    response::{AppendHeaders, IntoResponse, Html},
+    response::{AppendHeaders, Html, IntoResponse},
     routing::get,
 };
 use tokio::fs::File;
